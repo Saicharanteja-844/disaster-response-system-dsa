@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "g++ -O3 backend/src/main.cpp backend/src/algorithms.cpp backend/src/graph.cpp backend/src/data.cpp -o DisasterSystem && chmod +x DisasterSystem"
   },
   "dependencies": {
     "express": "^4.19.2"

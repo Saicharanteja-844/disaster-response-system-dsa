@@ -11,7 +11,9 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Helper to execute the C++ binary and return JSON
 function runDisasterSystem(args, res) {
-    const exePath = path.join(__dirname, 'DisasterSystem.exe');
+    const isWindows = process.platform === 'win32';
+    const binaryName = isWindows ? 'DisasterSystem.exe' : './DisasterSystem';
+    const exePath = path.join(__dirname, binaryName);
     
     execFile(exePath, args, { cwd: __dirname }, (error, stdout, stderr) => {
         if (error) {
@@ -187,7 +189,9 @@ app.get('/api/compare', async (req, res) => {
     try {
         const promises = algos.map(algo => {
             return new Promise((resolve) => {
-                const exePath = path.join(__dirname, 'DisasterSystem.exe');
+                const isWindows = process.platform === 'win32';
+                const binaryName = isWindows ? 'DisasterSystem.exe' : './DisasterSystem';
+                const exePath = path.join(__dirname, binaryName);
                 const args = ['--route', source, destination, '--algo', algo];
                 if (blocked) {
                     args.push('--block', blocked);
