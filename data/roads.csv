@@ -1,0 +1,70 @@
+source,destination,distance,danger_level,blocked
+Srinagar,Jammu,260.0,3,0
+Srinagar,Leh,420.0,4,0
+Jammu,Leh,680.0,5,0
+Jammu,Dharamshala,190.0,2,0
+Dharamshala,Mandi,125.0,2,0
+Mandi,Kullu,70.0,2,0
+Kullu,Manali,40.0,1,0
+Mandi,Shimla,120.0,2,0
+Shimla,Dehradun,230.0,3,0
+Dehradun,Kedarnath,220.0,4,0
+Kedarnath,Joshimath,160.0,4,0
+Joshimath,Nainital,280.0,3,0
+Nainital,New Delhi,300.0,2,0
+Dehradun,New Delhi,250.0,1,0
+Jammu,New Delhi,600.0,2,0
+New Delhi,Lucknow,550.0,1,0
+New Delhi,Bhopal,780.0,1,0
+Lucknow,Patna,500.0,2,0
+Bhopal,Nagpur,350.0,2,0
+Bhopal,Lucknow,620.0,1,0
+Patna,Kolkata,580.0,2,0
+Patna,Gangtok,470.0,3,0
+Kolkata,Gangtok,670.0,3,0
+Gangtok,Darjeeling,100.0,2,0
+Darjeeling,Guwahati,500.0,3,0
+Guwahati,Shillong,100.0,1,0
+Guwahati,Itanagar,330.0,2,0
+Guwahati,Imphal,480.0,3,0
+Shillong,Imphal,350.0,3,0
+Kolkata,Bhubaneswar,440.0,2,0
+Bhubaneswar,Puri,60.0,1,0
+Bhubaneswar,Paradeep,100.0,1,0
+Puri,Paradeep,90.0,1,0
+Bhubaneswar,Visakhapatnam,440.0,2,0
+Visakhapatnam,Kakinada,150.0,1,0
+Kakinada,Vijayawada,200.0,1,0
+Vijayawada,Chennai,450.0,2,0
+Vijayawada,Hyderabad,270.0,1,0
+Hyderabad,Chennai,630.0,1,0
+Hyderabad,Bengaluru,570.0,1,0
+Bengaluru,Chennai,350.0,1,0
+Bengaluru,Kochi,550.0,2,0
+Chennai,Kochi,700.0,2,0
+Mumbai,Pune,150.0,1,0
+Pune,Bengaluru,840.0,1,0
+Mumbai,Nagpur,800.0,2,0
+Nagpur,Hyderabad,500.0,1,0
+Nagpur,Bhubaneswar,830.0,2,0
+Pune,Hyderabad,560.0,1,0
+Bhopal,Bhubaneswar,950.0,3,0
+Mumbai,Bhopal,770.0,2,0
+New Delhi,Mumbai,1400.0,2,0
+Guwahati,Siliguri,430.0,2,0
+Siliguri,Darjeeling,65.0,2,0
+Siliguri,Patna,440.0,2,0
+Chennai,Puducherry,150.0,1,0
+Puducherry,Kochi,550.0,2,0
+Puducherry,Bengaluru,310.0,1,0
+Shimla,Chandigarh,110.0,2,0
+Chandigarh,New Delhi,250.0,1,0
+Chandigarh,Jammu,340.0,2,0
+Chandigarh,Dharamshala,240.0,2,0
+Dehradun,Rishikesh,45.0,1,0
+Rishikesh,Kedarnath,180.0,4,0
+Rishikesh,Joshimath,250.0,3,0
+Rishikesh,Nainital,240.0,2,0
+Rishikesh,New Delhi,240.0,1,0
+Bengaluru,Mysuru,140.0,1,0
+Mysuru,Kochi,350.0,2,0

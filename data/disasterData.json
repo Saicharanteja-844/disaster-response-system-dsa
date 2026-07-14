@@ -1,0 +1,45 @@
+{
+  "disaster_type": "Severe Flash Flooding",
+  "severity_level": "Critical",
+  "affected_area": "Delhi East Region",
+  "active_incidents": 14,
+  "people_rescued": 348,
+  "people_missing": 22,
+  "blocked_roads": 3,
+  "hospital_occupancy": "74%",
+  "shelter_occupancy": "61%",
+  "alerts": [
+    {
+      "id": "A1",
+      "time": "14:15",
+      "sector": "Connaught Place",
+      "type": "Landslide",
+      "description": "Road connecting Connaught Place and Karol Bagh blocked due to mudslide.",
+      "severity": "High"
+    },
+    {
+      "id": "A2",
+      "time": "13:40",
+      "sector": "Uttam Nagar",
+      "type": "Rising Water",
+      "description": "Water level near Riverbed bridge rising rapidly. Caution advised.",
+      "severity": "Medium"
+    },
+    {
+      "id": "A3",
+      "time": "12:10",
+      "sector": "Indirapuram",
+      "type": "Power Outage",
+      "description": "Grid failure reported. Standby generators activated at Indirapuram hostel.",
+      "severity": "Low"
+    },
+    {
+      "id": "A4",
+      "time": "10:30",
+      "sector": "Janakpuri",
+      "type": "Evacuation",
+      "description": "Evacuation of low-lying area completed. Citizens shifted to Uttam Nagar shelter.",
+      "severity": "Info"
+    }
+  ]
+}

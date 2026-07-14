@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>National Disaster Response & Rescue Navigation Dashboard</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS for Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body class="dark-theme">
+  
+  <!-- Navigation Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="logo-text">
+        <h1>RESCUE<span>NAV</span></h1>
+        <p>National Disaster Response Command Center</p>
+      </div>
+    </div>
+    
+    <div class="header-status">
+      <div class="status-indicator">
+        <span class="pulse-dot green"></span>
+        <span class="status-label">NATIONAL DISASTER ENGINE STABLE</span>
+      </div>
+      <div class="live-clock">
+        <i class="fa-regular fa-clock"></i> <span id="current-time">12:00:00 PM</span>
+      </div>
+      <div class="header-controls">
+        <button id="theme-toggle-btn" class="control-icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <button id="about-btn" class="control-text-btn" onclick="openAboutModal()">
+          <i class="fa-solid fa-circle-info"></i> About Project
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+    
+    <!-- Main Workspace Section -->
+    <div class="workspace-grid">
+      
+      <!-- Left Sidebar: Controls & Planner -->
+      <aside class="control-panel panel-card">
+        <div class="panel-header border-bottom">
+          <i class="fa-solid fa-sliders"></i>
+          <h2>Operations Panel</h2>
+        </div>
+
+        <!-- Graph Statistics Panel -->
+        <div class="stats-panel-sidebar">
+          <h3><i class="fa-solid fa-circle-nodes text-cyan"></i> Graph Topology</h3>
+          <div class="sidebar-stats-grid">
+            <div class="sidebar-stat-item">
+              <span class="stat-num" id="stats-nodes">36</span>
+              <span class="stat-lbl">Nodes</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="stat-num" id="stats-edges">52</span>
+              <span class="stat-lbl">Edges</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="stat-num" id="stats-blocked">0</span>
+              <span class="stat-lbl">Blocked</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="stat-num" id="stats-components">1</span>
+              <span class="stat-lbl">Components</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route Planning -->
+        <div id="tab-routing">
+          <form id="routing-form" onsubmit="calculateRoute(event)">
+            <div class="form-group">
+              <label for="route-disaster"><i class="fa-solid fa-cloud-showers-water text-cyan"></i> Disaster Type</label>
+              <select id="route-disaster" onchange="triggerRouteRecalculationIfPossible()">
+                <option value="flood" selected>Flood (Flooded Roads)</option>
+                <option value="cyclone">Cyclone (Coastal Storms)</option>
+                <option value="landslide">Landslide (Mountain Obstructions)</option>
+                <option value="earthquake">Earthquake (Seismic Damage)</option>
+                <option value="fire">Forest Fire (Wildfire Blocks)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="route-source"><i class="fa-solid fa-location-dot text-green"></i> Rescue Base (Source)</label>
+              <select id="route-source" required>
+                <option value="" disabled selected>Select start node...</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="route-dest"><i class="fa-solid fa-flag-checkered text-red"></i> Incident Location (Destination)</label>
+              <select id="route-dest" required>
+                <option value="" disabled selected>Select destination...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="route-algo"><i class="fa-solid fa-gears text-info"></i> Routing Algorithm</label>
+              <select id="route-algo">
+                <option value="dijkstra" selected>Dijkstra (Safety Balanced)</option>
+                <option value="astar">A* Search (Haversine Heuristic)</option>
+                <option value="bfs">Breadth First Search (BFS Path)</option>
+                <option value="dfs">Depth First Search (DFS Path)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="primary-btn"><i class="fa-solid fa-compass"></i> Calculate Rescue Route</button>
+          </form>
+
+          <div class="blockage-section">
+            <div class="section-title">
+              <h3><i class="fa-solid fa-road-barrier text-red" style="color:var(--primary);"></i> Road Blockages</h3>
+              <span class="badge" id="blockages-count">0</span>
+            </div>
+            <p class="section-desc">Toggle roads below to mark them as blocked or dangerous. Active routing algorithms will dynamically bypass blocked routes.</p>
+            <div class="blockages-list" id="blockages-list-container">
+              <!-- Checkboxes populated dynamically -->
+            </div>
+            <button id="clear-blocks-btn" class="secondary-btn" style="margin-top: 0.5rem;"><i class="fa-solid fa-trash-can"></i> Clear All Blockages</button>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Center Pane: Map Canvas Visualizer -->
+      <section class="map-container panel-card">
+        <div class="panel-header">
+          <div class="panel-title-area">
+            <i class="fa-regular fa-map"></i>
+            <h2>Network View Visualizer</h2>
+            
+            <!-- View Mode Switch -->
+            <div class="view-toggle-container">
+              <button class="view-toggle-btn active" id="view-map-btn" onclick="setViewMode('map')"><i class="fa-solid fa-earth-americas"></i> Map View</button>
+              <button class="view-toggle-btn" id="view-graph-btn" onclick="setViewMode('graph')"><i class="fa-solid fa-network-wired"></i> Graph View</button>
+            </div>
+          </div>
+          <div class="map-legend extended-legend">
+            <span><i class="fa-solid fa-hospital text-blue" style="color:var(--info);"></i> Hospital</span>
+            <span><i class="fa-solid fa-tents" style="color:var(--warning);"></i> Shelter</span>
+            <span><i class="fa-solid fa-truck-medical text-orange" style="color:var(--primary);"></i> SDRF</span>
+            <span><span class="legend-color legend-blocked-dash"></span> Blocked</span>
+            <span><span class="legend-color legend-optimal"></span> Route</span>
+            <span><span class="legend-color legend-visited"></span> Visited</span>
+          </div>
+        </div>
+        
+        <div class="canvas-wrapper" style="height: 520px;">
+          <div id="network-map" style="height: 100%; width: 100%;"></div>
+          <div class="canvas-overlay" id="map-instructions">
+            <p><i class="fa-solid fa-mouse-pointer"></i> Click anywhere on the map or select dropdowns to set Source/Destination | Click roads to toggle Blockages</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Sidebar: Results & Resource Panel -->
+      <aside class="right-panel">
+        
+        <!-- Optimal Route Card -->
+        <div class="panel-card results-card" id="results-panel" style="display: none;">
+          <div class="panel-header border-bottom">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <h2>Optimal Route Details</h2>
+          </div>
+          <div class="results-body">
+            <!-- Disaster Status Banner -->
+            <div id="disaster-alert-banner" style="display: none; background: rgba(239, 83, 80, 0.15); border: 1px solid var(--primary); color: var(--text-primary); padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.4; align-items: start; gap: 0.75rem;">
+              <i class="fa-solid fa-triangle-exclamation" style="color: var(--primary); margin-top: 0.15rem; font-size: 1.1rem;"></i>
+              <div style="flex: 1;">
+                <div id="disaster-alert-title" style="font-weight: bold; color: var(--primary); margin-bottom: 0.15rem;">Active Disaster Routing Active</div>
+                <div id="disaster-alert-message">Alternative route selected.</div>
+              </div>
+            </div>
+
+            <div class="route-info-card">
+              <div class="route-info-row">
+                <span>Algorithm:</span>
+                <strong id="route-algo-display" class="text-cyan">Dijkstra</strong>
+              </div>
+              <div class="route-info-row">
+                <span>Total Distance:</span>
+                <strong id="route-distance-display">0.0 km</strong>
+              </div>
+              <div class="route-info-row">
+                <span>Est. Rescue Time:</span>
+                <strong id="route-time-display">0 mins</strong>
+              </div>
+              <div class="route-info-row">
+                <span>Danger Rating:</span>
+                <strong id="route-danger-display">Low Danger</strong>
+              </div>
+            </div>
+
+            <!-- Path sequence sequence list -->
+            <div class="route-directions">
+              <h4>Recommended Path Sequence</h4>
+              <div class="direction-path-list" id="res-steps-path">
+                <!-- Dwarka -> Janakpuri -> CP -->
+              </div>
+            </div>
+
+            <!-- Traversal sequence list -->
+            <div class="route-directions" id="traversal-order-container" style="display: none; margin-top: 1.25rem;">
+              <h4 style="color: var(--warning);"><i class="fa-solid fa-arrows-spin"></i> Traversal Search Order</h4>
+              <div class="direction-path-list" id="res-traversal-path" style="border-color: var(--warning-glow);">
+                <!-- Visited nodes sequence -->
+              </div>
+            </div>
+
+            <!-- Performance statistics -->
+            <div class="execution-stats-card">
+              <h4><i class="fa-solid fa-bolt"></i> Performance Statistics</h4>
+              <div class="stats-row">
+                <div>
+                  <span class="stats-label">Complexity</span>
+                  <span class="stats-val" id="perf-complexity">O(E log V)</span>
+                </div>
+                <div>
+                  <span class="stats-label">Visited</span>
+                  <span class="stats-val" id="perf-nodes">0 Nodes</span>
+                </div>
+                <div>
+                  <span class="stats-label">Execution Time</span>
+                  <span class="stats-val" id="perf-execution">0.0 ms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Algorithm Comparison Card -->
+        <div class="panel-card comparison-card" id="comparison-panel" style="display: none;">
+          <div class="panel-header border-bottom">
+            <i class="fa-solid fa-chart-simple text-cyan"></i>
+            <h2>Live Algorithm Comparison</h2>
+          </div>
+          <div class="comparison-body">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>Distance</th>
+                  <th>Time</th>
+                  <th>Visited</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-table-rows">
+                <!-- Table rows populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Emergency Resources Card -->
+        <div class="panel-card resources-card">
+          <div class="panel-header border-bottom">
+            <i class="fa-solid fa-truck-medical"></i>
+            <h2>Emergency Resources</h2>
+          </div>
+          <div class="resources-body">
+            <div class="resource-tabs">
+              <button class="resource-tab active" onclick="switchResourceTab('hospitals')">Hospitals</button>
+              <button class="resource-tab" onclick="switchResourceTab('shelters')">Shelters</button>
+              <button class="resource-tab" onclick="switchResourceTab('teams')">Teams</button>
+            </div>
+            
+            <div class="resources-scroll-area">
+              <!-- Lists populated dynamically -->
+              <div id="res-list-hospitals" class="resource-list-content active"></div>
+              <div id="res-list-shelters" class="resource-list-content"></div>
+              <div id="res-list-teams" class="resource-list-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Incident Feed removed -->
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- Footers -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p><strong>Disaster Response & Rescue Navigation System</strong> | Data Structures & Algorithms Project</p>
+      <p class="footer-details">Graphs • BFS • DFS • Dijkstra • A* • Priority Queue | LPU Computer Science Engineering</p>
+    </div>
+  </footer>
+
+  <!-- About Project Modal -->
+  <div id="about-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content panel-card">
+      <div class="modal-header border-bottom">
+        <h3><i class="fa-solid fa-circle-info text-cyan"></i> About This Project</h3>
+        <button class="modal-close-btn" onclick="closeAboutModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>Overview</h4>
+        <p>This project implements a real-time Disaster Response & Rescue Command Center applying Graph Data Structures & Algorithms. It calculates paths and identifies resources under simulated road blockages and hazard level conditions.</p>
+        
+        <h4>Key Algorithms</h4>
+        <ul>
+          <li><strong>Dijkstra's Algorithm</strong>: Computes safety-balanced shortest paths by minimizing physical distance scaled with a danger index. Complexity: <code>O(E log V)</code>.</li>
+          <li><strong>A* Search Algorithm</strong>: Enhances Dijkstra's using a goal-oriented spatial heuristic calculated via the Haversine formula. Complexity: <code>O(E log V)</code>.</li>
+          <li><strong>BFS (Breadth-First Search)</strong>: Computes route based on minimum hop count (fewest edges). Complexity: <code>O(V + E)</code>.</li>
+          <li><strong>DFS (Depth-First Search)</strong>: Recursively explores search depth paths. Complexity: <code>O(V + E)</code>.</li>
+        </ul>
+
+        <h4>Backend Implementation</h4>
+        <p>Built using high-performance C++ for adj list graph storage, priority queues, and sorting operations. Program stdout is returned as JSON strings to an Express server bridge.</p>
+
+        <h4>Team & Supervision</h4>
+        <div class="credits-grid">
+          <div>
+            <strong>Supervised By:</strong>
+            <span>CSE Faculty Advisor</span>
+          </div>
+          <div>
+            <strong>Developed By:</strong>
+            <span>LPU Computer Science Students</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="dashboard.js"></script>
+  <script src="route.js"></script>
+</body>
+</html>

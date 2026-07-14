@@ -1,0 +1,15 @@
+# Dependency directories
+node_modules/
+
+# Compiled C++ binaries and object files
+*.exe
+*.o
+*.obj
+*.out
+
+# IDE and system logs
+*.log
+.system_generated/
+.agents/
+.DS_Store
+Thumbs.db
