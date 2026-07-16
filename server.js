@@ -17,25 +17,37 @@ function runDisasterSystem(args, res) {
     
     execFile(exePath, args, { cwd: __dirname }, (error, stdout, stderr) => {
         if (error) {
-            console.error('Execution Error:', error);
-            console.error('Stderr:', stderr);
-            return res.status(500).json({
-                status: 'error',
-                message: 'Failed to execute routing backend.',
-                details: stderr || error.message
-            });
+            console.warn('C++ Execution Failed. Falling back to native JS engine. Error:', error.message);
+            try {
+                const { executeFallbackEngine } = require('./dsaEngine');
+                const result = executeFallbackEngine(args);
+                return res.json(result);
+            } catch (fallbackError) {
+                console.error('Fallback Engine Error:', fallbackError);
+                return res.status(500).json({
+                    status: 'error',
+                    message: 'Both C++ backend and JS fallback failed.',
+                    details: fallbackError.message
+                });
+            }
         }
         
         try {
             const jsonOutput = JSON.parse(stdout);
             res.json(jsonOutput);
         } catch (parseError) {
-            console.error('JSON Parse Error. Stdout was:', stdout);
-            res.status(500).json({
-                status: 'error',
-                message: 'Invalid output from backend.',
-                details: stdout
-            });
+            console.warn('JSON Parse Error for C++ output. Falling back to native JS engine. Stdout was:', stdout);
+            try {
+                const { executeFallbackEngine } = require('./dsaEngine');
+                const result = executeFallbackEngine(args);
+                return res.json(result);
+            } catch (fallbackError) {
+                return res.status(500).json({
+                    status: 'error',
+                    message: 'C++ parse failed and JS fallback failed.',
+                    details: stdout
+                });
+            }
         }
     });
 }
@@ -201,13 +213,25 @@ app.get('/api/compare', async (req, res) => {
                 }
                 execFile(exePath, args, { cwd: __dirname }, (error, stdout, stderr) => {
                     if (error) {
-                        resolve({ success: false, error: error.message });
+                        try {
+                            const { executeFallbackEngine } = require('./dsaEngine');
+                            const result = executeFallbackEngine(args);
+                            resolve(result.status === 'success' ? { success: true, data: result } : { success: false, error: result.message });
+                        } catch (fallbackError) {
+                            resolve({ success: false, error: error.message });
+                        }
                     } else {
                         try {
                             const output = JSON.parse(stdout);
                             resolve({ success: true, data: output });
                         } catch (e) {
-                            resolve({ success: false, error: 'JSON parse error' });
+                            try {
+                                const { executeFallbackEngine } = require('./dsaEngine');
+                                const result = executeFallbackEngine(args);
+                                resolve(result.status === 'success' ? { success: true, data: result } : { success: false, error: 'JSON parse error' });
+                            } catch (fallbackError) {
+                                resolve({ success: false, error: 'JSON parse error' });
+                            }
                         }
                     }
                 });
