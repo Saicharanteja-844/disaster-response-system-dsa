@@ -46,7 +46,16 @@ function parseCSV(filePath) {
 // Data Manager class mimicking C++ DataManager
 class DataManager {
     constructor() {
-        const dataDir = path.join(__dirname, 'data');
+        const isWin = process.platform === 'win32';
+        let dataDir = path.join(__dirname, 'data');
+        if (!isWin) {
+            const tmpDir = '/tmp/data';
+            if (fs.existsSync(tmpDir) && fs.readdirSync(tmpDir).length > 0) {
+                dataDir = tmpDir;
+            } else {
+                dataDir = path.join(process.cwd(), 'data');
+            }
+        }
         this.coordinatesList = parseCSV(path.join(dataDir, 'coordinates.csv'));
         this.roadsList = parseCSV(path.join(dataDir, 'roads.csv'));
         this.hospitals = parseCSV(path.join(dataDir, 'hospitals.csv'));

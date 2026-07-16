@@ -52,7 +52,7 @@ if (hasGxx) {
             process.exit(1);
         }
     } else {
-        console.error('Error: g++ compiler not found in the environment. Cannot compile C++ engine.');
-        process.exit(1);
+        console.warn('Warning: g++ compiler not found in the environment. Web server will run using the JavaScript DSA fallback engine.');
+        process.exit(0);
     }
 }
