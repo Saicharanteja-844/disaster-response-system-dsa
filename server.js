@@ -7,12 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(process.cwd(), 'frontend')));
 
 const isWin = process.platform === 'win32';
-let exePath = path.join(__dirname, 'DisasterSystem.exe');
-let dataDir = path.join(__dirname, 'data');
-let cwd = __dirname;
+let exePath = path.join(process.cwd(), 'DisasterSystem.exe');
+let dataDir = path.join(process.cwd(), 'data');
+let cwd = process.cwd();
 let envEnsured = false;
 
 function ensureEnvironment() {
@@ -29,7 +29,7 @@ function ensureEnvironment() {
     cwd = '/tmp';
     
     // 1. Copy binary to /tmp and set permissions
-    const srcExe = path.join(__dirname, 'DisasterSystem');
+    const srcExe = path.join(process.cwd(), 'DisasterSystem');
     if (!fs.existsSync(srcExe)) {
         console.error(`Source C++ binary not found at: ${srcExe}`);
     } else {
@@ -53,7 +53,7 @@ function ensureEnvironment() {
     }
     
     // 2. Copy data files to /tmp/data
-    const srcDataDir = path.join(__dirname, 'data');
+    const srcDataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
     }
@@ -331,7 +331,7 @@ app.get('/api/disaster-stats', (req, res) => {
 
 // Serve frontend application index
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+    res.sendFile(path.join(process.cwd(), 'frontend', 'index.html'));
 });
 
 app.listen(PORT, () => {
