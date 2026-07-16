@@ -9,13 +9,87 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
+const isWin = process.platform === 'win32';
+let exePath = path.join(__dirname, 'DisasterSystem.exe');
+let dataDir = path.join(__dirname, 'data');
+let cwd = __dirname;
+let envEnsured = false;
+
+function ensureEnvironment() {
+    if (envEnsured) return;
+    
+    if (isWin) {
+        envEnsured = true;
+        return;
+    }
+    
+    // We are on Linux (Vercel)
+    exePath = '/tmp/DisasterSystem';
+    dataDir = '/tmp/data';
+    cwd = '/tmp';
+    
+    // 1. Copy binary to /tmp and set permissions
+    const srcExe = path.join(__dirname, 'DisasterSystem');
+    if (!fs.existsSync(srcExe)) {
+        console.error(`Source C++ binary not found at: ${srcExe}`);
+    } else {
+        try {
+            let shouldCopy = true;
+            if (fs.existsSync(exePath)) {
+                const srcStats = fs.statSync(srcExe);
+                const destStats = fs.statSync(exePath);
+                if (srcStats.size === destStats.size) {
+                    shouldCopy = false;
+                }
+            }
+            if (shouldCopy) {
+                fs.copyFileSync(srcExe, exePath);
+                console.log(`Successfully copied binary to ${exePath}`);
+            }
+            fs.chmodSync(exePath, 0o755);
+        } catch (err) {
+            console.error(`Failed to copy or set permissions on ${exePath}:`, err);
+        }
+    }
+    
+    // 2. Copy data files to /tmp/data
+    const srcDataDir = path.join(__dirname, 'data');
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    if (fs.existsSync(srcDataDir)) {
+        try {
+            const files = fs.readdirSync(srcDataDir);
+            for (const file of files) {
+                const srcFile = path.join(srcDataDir, file);
+                const destFile = path.join(dataDir, file);
+                
+                let shouldCopy = true;
+                if (fs.existsSync(destFile)) {
+                    const srcStats = fs.statSync(srcFile);
+                    const destStats = fs.statSync(destFile);
+                    if (srcStats.size === destStats.size) {
+                        shouldCopy = false;
+                    }
+                }
+                if (shouldCopy) {
+                    fs.copyFileSync(srcFile, destFile);
+                    console.log(`Copied ${file} to ${destFile}`);
+                }
+            }
+        } catch (err) {
+            console.error(`Failed to copy data directory to ${dataDir}:`, err);
+        }
+    }
+    envEnsured = true;
+}
+
 // Helper to execute the C++ binary and return JSON
 function runDisasterSystem(args, res) {
-    const isWindows = process.platform === 'win32';
-    const binaryName = isWindows ? 'DisasterSystem.exe' : './DisasterSystem';
-    const exePath = path.join(__dirname, binaryName);
+    ensureEnvironment();
     
-    execFile(exePath, args, { cwd: __dirname }, (error, stdout, stderr) => {
+    execFile(exePath, args, { cwd: cwd }, (error, stdout, stderr) => {
         if (error) {
             console.error('Execution Error:', error);
             console.error('Stderr:', stderr);
@@ -135,22 +209,24 @@ app.post('/api/resources', (req, res) => {
     let csvLine = '';
     let filePath = '';
 
+    ensureEnvironment();
+
     if (type === 'hospitals') {
         const cleanCapacity = parseInt(capacity) || 100;
         const cleanBeds = beds_available !== undefined ? parseInt(beds_available) : cleanCapacity;
         csvLine = `\n${cleanName},${cleanSector},${cleanCapacity},${cleanBeds},${cleanContact}`;
-        filePath = path.join(__dirname, 'data', 'hospitals.csv');
+        filePath = path.join(dataDir, 'hospitals.csv');
     } else if (type === 'shelters') {
         const cleanCapacity = parseInt(capacity) || 100;
         const cleanSpaces = spaces_available !== undefined ? parseInt(spaces_available) : cleanCapacity;
         const cleanStatus = clean(status || 'Active');
         csvLine = `\n${cleanName},${cleanSector},${cleanCapacity},${cleanSpaces},${cleanStatus}`;
-        filePath = path.join(__dirname, 'data', 'shelters.csv');
+        filePath = path.join(dataDir, 'shelters.csv');
     } else if (type === 'teams') {
         const cleanSize = parseInt(size || capacity) || 10;
         const cleanSpecialty = clean(specialty || 'General Rescue');
         csvLine = `\n${cleanName},${cleanSector},${cleanSize},${cleanSpecialty},${cleanContact}`;
-        filePath = path.join(__dirname, 'data', 'teams.csv');
+        filePath = path.join(dataDir, 'teams.csv');
     } else {
         return res.status(400).json({
             status: 'error',
@@ -189,9 +265,7 @@ app.get('/api/compare', async (req, res) => {
     try {
         const promises = algos.map(algo => {
             return new Promise((resolve) => {
-                const isWindows = process.platform === 'win32';
-                const binaryName = isWindows ? 'DisasterSystem.exe' : './DisasterSystem';
-                const exePath = path.join(__dirname, binaryName);
+                ensureEnvironment();
                 const args = ['--route', source, destination, '--algo', algo];
                 if (blocked) {
                     args.push('--block', blocked);
@@ -199,7 +273,7 @@ app.get('/api/compare', async (req, res) => {
                 if (disaster) {
                     args.push('--disaster', disaster);
                 }
-                execFile(exePath, args, { cwd: __dirname }, (error, stdout, stderr) => {
+                execFile(exePath, args, { cwd: cwd }, (error, stdout, stderr) => {
                     if (error) {
                         resolve({ success: false, error: error.message });
                     } else {
@@ -233,7 +307,8 @@ app.get('/api/compare', async (req, res) => {
 
 // 5. Get disaster dashboard stats
 app.get('/api/disaster-stats', (req, res) => {
-    const jsonPath = path.join(__dirname, 'data', 'disasterData.json');
+    ensureEnvironment();
+    const jsonPath = path.join(dataDir, 'disasterData.json');
     fs.readFile(jsonPath, 'utf8', (err, data) => {
         if (err) {
             console.error('Error reading disaster stats:', err);
@@ -253,27 +328,6 @@ app.get('/api/disaster-stats', (req, res) => {
     });
 });
 
-// 6. Download project ZIP (from parent folder)
-app.get('/api/download/code', (req, res) => {
-    const zipPath = path.join(__dirname, '..', 'Disaster_Rescue_System.zip');
-    res.download(zipPath, 'Disaster_Rescue_System.zip', (err) => {
-        if (err) {
-            console.error('Error sending zip file:', err);
-            res.status(500).json({ status: 'error', message: 'Failed to download project ZIP file.' });
-        }
-    });
-});
-
-// 7. Download project report (from parent folder)
-app.get('/api/download/report', (req, res) => {
-    const reportPath = path.join(__dirname, '..', 'project_report.md');
-    res.download(reportPath, 'Disaster_Response_Project_Report.md', (err) => {
-        if (err) {
-            console.error('Error sending report file:', err);
-            res.status(500).json({ status: 'error', message: 'Failed to download project report.' });
-        }
-    });
-});
 
 // Serve frontend application index
 app.get('*', (req, res) => {
